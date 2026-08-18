@@ -1,9 +1,11 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { useEffect } from "react";
+import ParagraphIndent from "./editor/ParagraphIndent";
 
 function RichTextEditor({ content, onChange }) {
     const editor = useEditor({
-        extensions: [StarterKit],
+        extensions: [StarterKit, ParagraphIndent],
         content,
 
         editorProps: {
@@ -16,6 +18,12 @@ function RichTextEditor({ content, onChange }) {
             onChange(editor.getHTML());
         },
     });
+
+    useEffect(() => {
+        if (editor && content !== editor.getHTML()) {
+            editor.commands.setContent(content || "");
+        }
+    }, [content, editor]);
 
     return (
         <div className="border rounded-lg overflow-hidden bg-white">

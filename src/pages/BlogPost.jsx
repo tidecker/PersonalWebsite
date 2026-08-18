@@ -4,7 +4,6 @@ import { supabase } from "../supabaseClient";
 
 function BlogPost() {
     const { slug } = useParams();
-
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -63,9 +62,10 @@ function BlogPost() {
                 />
             )}
 
-            <p className="text-lg leading-relaxed whitespace-pre-wrap">
-                {post.content}
-            </p>
+            <div
+                className="prose max-w-none [&_p]:mb-4"
+                dangerouslySetInnerHTML={{ __html: post.content }}
+            />
         </main>
     );
 }

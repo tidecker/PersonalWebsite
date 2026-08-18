@@ -13,6 +13,7 @@ import Blog from './pages/Blog.jsx'
 import BlogPost from "./pages/BlogPost";
 import Contact from './pages/Contact.jsx'
 
+{/* Main starting point of the application. index.html grabs the root element from here to serve the app */}
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>

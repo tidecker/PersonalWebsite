@@ -60,17 +60,40 @@ function Blog() {
                 <p className="mt-2">
                     {post.summary}
                 </p>
-                {expandedPostId === post.id && (
-                    <p className="mt-4">
-                        {post.content}
-                        <Link
-                            to={`/blog/${post.slug}`}
-                            className="block text-center mt-4 text-blue-600 hover:underline"
-                        >
-                            Read full post
-                        </Link>
-                    </p>
-                )}
+
+                <div
+                    className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                        expandedPostId === post.id
+                            ? "max-h-64 opacity-100 mt-4"
+                            : "max-h-0 opacity-0 mt-0"
+                    }`}
+                >
+                    <div className="relative">
+                        <div
+                            className="prose max-w-none [&_p]:mb-4 [&_p]:indent-8"
+                            dangerouslySetInnerHTML={{ __html: post.content }}
+                        />
+
+                        <div className="pointer-events-none absolute bottom-0 left-0 h-20 w-full bg-gradient-to-t from-white to-transparent" />
+                    </div>
+                </div>
+
+                <div
+                    className={`overflow-hidden transition-all duration-500 ${
+                        expandedPostId === post.id
+                            ? "max-h-20 opacity-100"
+                            : "max-h-0 opacity-0"
+                    }`}
+                >
+                    <Link
+                        to={`/blog/${post.slug}`}
+                        onClick={(event) => event.stopPropagation()}
+                        className="block mt-4 text-center text-blue-600 hover:underline"
+                    >
+                        Read full post
+                    </Link>
+                </div>
+                
                 </article>
             ))}
             </div>
