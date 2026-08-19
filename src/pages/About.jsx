@@ -41,17 +41,43 @@ function About() {
                 <h2 className="text-3xl font-semibold mb-4">
                     My Background
                 </h2>
-
                 <p className="text-lg mb-10">
                     {content.background}
                 </p>
 
                 <h2 className="text-3xl font-semibold mb-4">
-                    What I’m Working Toward
+                    What I’m Interested In
                 </h2>
+                <p className="text-lg mb-10">
+                    {content.interests}
+                </p>
 
-                <p className="text-lg">
-                    {content.goals}
+                <h2 className="text-3xl font-semibold mb-4">
+                    What I’m Working On
+                </h2>
+                <p className="text-lg mb-10">
+                    {content.projects}
+                </p>
+
+                <h2 className="text-3xl font-semibold mb-4">
+                    How I Work
+                </h2>
+                <p className="text-lg mb-10">
+                    {content.workStyle}
+                </p>
+
+                <h2 className="text-3xl font-semibold mb-4">
+                    Outside of Technology
+                </h2>
+                <p className="text-lg mb-10">
+                    {content.outsideTechnology}
+                </p>
+
+                <h2 className="text-3xl font-semibold mb-4">
+                    Future Goals
+                </h2>
+                <p className="text-lg mb-10">
+                    {content.futureGoals}
                 </p>
             </section>
         </main>
