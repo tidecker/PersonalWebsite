@@ -28,23 +28,27 @@ function AdminLogin() {
             <h1 className="text-3xl font-bold mb-6">Admin</h1>
 
             <form onSubmit={handleLogin} className="max-w-md space-y-4">
-            <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="w-full border rounded p-2"
-                required
-            />
+                <input
+                    type="email"
+                    name="email"
+                    autoComplete="username"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className="w-full border rounded p-2"
+                    required
+                />
 
-            <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="w-full border rounded p-2"
-                required
-            />
+                <input
+                    type="password"
+                    name="password"
+                    autoComplete="current-password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    className="w-full border rounded p-2"
+                    required
+                />
 
             <button
                 type="submit"

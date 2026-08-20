@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import AdminLogin from "../components/adminPage/AdminLogin";
 import BlogPostForm from "../components/adminPage/BlogPostForm";
+import PostList from "../components/adminPage/PostList";
+import { loadDrafts, loadPublishedPosts, loadHiddenPosts, deletePost, hidePost, unhidePost } from "../components/adminPage/AdminPost";
 
 function Admin() {
     const [message, setMessage] = useState("");
@@ -30,57 +32,20 @@ function Admin() {
 
     useEffect(() => {
         if (session) {
-            loadDrafts();
-            loadPublishedPosts();
-            loadHiddenPosts();
+            refreshPosts();
         }
     }, [session]);
 
-    async function loadPublishedPosts() {
-        const { data, error } = await supabase
-            .from("posts")
-            .select("*")
-            .eq("status", "published")
-            .order("published_at", { ascending: false });
+    async function refreshPosts() {
+        const draftsResult = await loadDrafts();
+        const publishedResult = await loadPublishedPosts();
+        const hiddenResult = await loadHiddenPosts();
 
-        if (error) {
-            console.error(error);
-            return;
-        }
-
-        setPublishedPosts(data);
+        if (!draftsResult.error) setDrafts(draftsResult.data);
+        if (!publishedResult.error) setPublishedPosts(publishedResult.data);
+        if (!hiddenResult.error) setHiddenPosts(hiddenResult.data);
     }
-
-    async function loadDrafts() {
-        const { data, error } = await supabase
-            .from("posts")
-            .select("*")
-            .eq("status", "draft")
-            .order("updated_at", { ascending: false });
-
-        if (error) {
-            console.error(error);
-            return;
-        }
-
-        setDrafts(data);
-    }
-
-    async function loadHiddenPosts() {
-        const { data, error } = await supabase
-            .from("posts")
-            .select("*")
-            .eq("status", "hidden")
-            .order("updated_at", { ascending: false });
-
-        if (error) {
-            console.error(error);
-            return;
-        }
-
-        setHiddenPosts(data);
-    }
-
+    
     async function handleDeletePost(id) {
         const confirmed = window.confirm(
             "Are you sure you want to delete this post?"
@@ -88,10 +53,7 @@ function Admin() {
 
         if (!confirmed) return;
 
-        const { error } = await supabase
-            .from("posts")
-            .delete()
-            .eq("id", id);
+        const { error } = await deletePost(id);
 
         if (error) {
             console.error(error);
@@ -99,45 +61,29 @@ function Admin() {
             return;
         }
 
-        await loadDrafts();
-        await loadPublishedPosts();
+        await refreshPosts();
     }
 
     async function handleHidePost(id) {
-        const { error } = await supabase
-            .from("posts")
-            .update({
-            status: "hidden",
-            updated_at: new Date().toISOString(),
-            })
-            .eq("id", id);
+        const { error } = await hidePost(id);
 
         if (error) {
             console.error(error);
             return;
         }
 
-        await loadPublishedPosts();
-        await loadHiddenPosts();
+        await refreshPosts();
     }
 
     async function handleUnhidePost(id) {
-        const { error } = await supabase
-            .from("posts")
-            .update({
-                status: "published",
-                updated_at: new Date().toISOString(),
-                published_at: new Date().toISOString(),
-            })
-            .eq("id", id);
+        const { error } = await unhidePost(id);
 
         if (error) {
             console.error(error);
             return;
         }
-
-        await loadPublishedPosts();
-        await loadHiddenPosts();
+        
+        await refreshPosts();
     }
 
     async function handleSavePost(formData) {
@@ -181,9 +127,7 @@ function Admin() {
         setEditingPost(null);
         setOriginalPublishedAt(null);
 
-        await loadDrafts();
-        await loadPublishedPosts();
-        await loadHiddenPosts();
+        await refreshPosts();
 
         setMessage(
             formData.status === "draft"
@@ -214,150 +158,42 @@ function Admin() {
                     message={message}
                 />
 
-                <details className="mt-10 max-w-2xl" open>
-                    <summary className="cursor-pointer text-2xl font-bold">
-                        Drafts ({drafts.length})
-                    </summary>
+                <PostList
+                    title="Drafts"
+                    status="draft"
+                    posts={drafts}
+                    editingPost={editingPost}
+                    onEdit={(post) => {
+                        setEditingPost(post);
+                    }}
+                    onDelete={handleDeletePost}
+                />
 
-                    <div className="mt-4">
-                        {drafts.length === 0 ? (
-                            <p>No drafts saved.</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {drafts.map((draft) => (
-                                    <div key={draft.id} className="border rounded p-4">
-                                        <h3 className="font-semibold">{draft.title}</h3>
-                                        <p>{draft.summary}</p>
+                <PostList
+                    title="Published Posts"
+                    status="published"
+                    posts={publishedPosts}
+                    editingPost={editingPost}
+                    onEdit={(post) => {
+                        setEditingPost(post);
+                        setOriginalPublishedAt(post.published_at);
+                    }}
+                    onDelete={handleDeletePost}
+                    onHide={handleHidePost}
+                />  
 
-                                        <button
-                                            type="button"
-                                            disabled={editingPost !== null}
-                                            onClick={() => {
-                                                setEditingPost(draft);
-
-                                                setDrafts((currentDrafts) =>
-                                                    currentDrafts.filter((item) => item.id !== draft.id)
-                                                );
-                                            }}
-                                            className="mt-3 rounded border px-3 py-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            Edit
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => handleDeletePost(draft.id)}
-                                            disabled={editingPost !== null}
-                                            className="mt-3 ml-2 rounded bg-red-600 px-3 py-1 text-white hover:bg-red-700 disabled:opacity-50"
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </details>
-
-                <details className="mt-10 max-w-2xl">
-                    <summary className="cursor-pointer text-2xl font-bold">
-                        Published Posts ({publishedPosts.length})
-                    </summary>
-
-                    <div className="mt-4">
-                        {publishedPosts.length === 0 ? (
-                            <p>No published posts.</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {publishedPosts.map((post) => (
-                                    <div key={post.id} className="border rounded p-4">
-                                        <h3 className="font-semibold">{post.title}</h3>
-                                        <p>{post.summary}</p>
-
-                                        <div className="mt-3 flex gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => handleHidePost(post.id)}
-                                                className="rounded bg-gray-600 px-3 py-1 text-white"
-                                            >
-                                                Hide
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                disabled={editingPost !== null}
-                                                onClick={() => {
-                                                    setEditingPost(post);
-                                                    setOriginalPublishedAt(post.published_at);
-                                                }}
-                                                className="rounded border px-3 py-1"
-                                            >
-                                                Edit
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDeletePost(post.id)}
-                                                className="rounded bg-red-600 px-3 py-1 text-white"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </details>
-
-                <details className="mt-10 max-w-2xl">
-                    <summary className="cursor-pointer text-2xl font-bold">
-                        Hidden Posts ({hiddenPosts.length})
-                    </summary>
-
-                    <div className="mt-4">
-                        {hiddenPosts.length === 0 ? (
-                            <p>No hidden posts.</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {hiddenPosts.map((post) => (
-                                    <div key={post.id} className="border rounded p-4">
-                                        <h3 className="font-semibold">{post.title}</h3>
-                                        <p>{post.summary}</p>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => handleUnhidePost(post.id)}
-                                            className="mt-3 rounded bg-blue-600 px-3 py-1 text-white"
-                                        >
-                                            Unhide
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            disabled={editingPost !== null}
-                                            onClick={() => {
-                                                setEditingPost(post);
-                                                setOriginalPublishedAt(post.published_at);
-                                            }}
-                                            className="rounded border px-3 py-1"
-                                        >
-                                            Edit
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => handleDeletePost(post.id)}
-                                            className="mt-3 ml-2 rounded bg-red-600 px-3 py-1 text-white"
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </details>
+                <PostList
+                    title="Hidden Posts"
+                    status="hidden"
+                    posts={hiddenPosts}
+                    editingPost={editingPost}
+                    onEdit={(post) => {
+                        setEditingPost(post);
+                        setOriginalPublishedAt(post.published_at);
+                    }}
+                    onDelete={handleDeletePost}
+                    onUnhide={handleUnhidePost}
+                />                
             </main>
         );
     }
